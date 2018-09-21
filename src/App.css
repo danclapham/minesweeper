@@ -1,0 +1,77 @@
+.App {
+  text-align: center;
+}
+
+
+.App-header {
+  background-color: #444444;
+  height: 80px;
+  padding: 20px;
+  color: white;
+}
+
+.App-title {
+  font-size: 2em;
+}
+
+.game-header {
+  padding: 20px;
+}
+
+.game-board {
+  margin-top: 40px;
+}
+
+
+
+.cell {
+  width: 40px;
+  height: 40px;
+  vertical-align: top;
+  background: #444444;
+  color: #ffffff;
+  border: none;
+  margin: 2px;
+  border-radius: 5px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.cell:hover {
+  background: #222;
+  background: #1a73e9;
+}
+
+.cellPressed, .cellPressed:hover {
+  background: rgb(16, 73, 179);
+}
+
+.cellIsMine, .cellIsMine:hover {
+  background: #881313;
+}
+
+
+
+.resetButton {
+  width: 160px;
+  border-radius: 5px;
+  background: #1a73e9;
+  font-size: 0.9em;
+}
+
+.resetButton:hover {
+  background: rgb(16, 73, 179);
+}
+
+.failedResetButton {
+  background: #bd1b1b;
+}
+
+.failedResetButton:hover {
+  background: #881313;
+}
+
+@keyframes App-logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
