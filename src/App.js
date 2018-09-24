@@ -1,14 +1,13 @@
 import React, { Component } from 'react';
 import Board from './components/Board.js';
 
-import './App.css';
+import './App.css'; 
 
 import 'typeface-roboto';
 import { 
   Grid, 
   withStyles,
 } from '@material-ui/core';
-
 
 const styles = theme => ({
   root: {
@@ -32,6 +31,30 @@ function shuffle(array) {
   return array;
 }
 
+function neighbouringCells(i, width) {
+  switch (i) {  // deal with corners first
+    case 0: // top left corner
+      return [0, 1, 0, 1];
+    case width - 1: // top right corner
+      return [0, 1, 1, 0];
+    case width * (width - 1): // bottom left corner
+      return [1, 0, 0, 1];
+    case width * width - 1: // bottom right corner
+      return [1, 0, 1, 0];
+  }
+  if (i < width) {  // top edge
+    return [0, 1, 1, 1];
+  } else if (width * (width -1) < i && i < width * width) { // bottom edge
+    return [1, 0, 1, 1];
+  } else if (i % width === 0) { // left edge
+    return [1, 1, 0, 1];
+  } else if (i % width === width - 1) { // right edge
+    return [1, 1, 1, 0];
+  } else {                // centre cells
+    return [1, 1, 1, 1];
+  }
+}
+
 function setMines(i, numCells, maxMines) {
   // sets the mines into random places in grid, leaving first clicked cell clear
   // at first entire grid is random, so first clicked cell needs to be cleared later
@@ -41,8 +64,7 @@ function setMines(i, numCells, maxMines) {
       mines[j] = false
     }
   }
-  clearFirstClickedCell(mines, i);
-  return mines;
+  return clearFirstClickedCell(mines, i);
 }
 
 function clearFirstClickedCell(mines, i) {
@@ -56,28 +78,34 @@ function clearFirstClickedCell(mines, i) {
       clearFirstClickedCell(mines, i);
     }
   }
+  return mines;
 }
 
-function setProximity(i, mines, width) {
-  var numMinesNear = 0;
-
-  for (let r = -1; r < 2; r++) {
-    for (let c = -1; c < 2; c++) {
-      //alert("i = " + i + "\nr = " + r + "\nc = " + c + "\n=> " + (i + r * width + c));
-
-      if (i < width) { // first row
-        
-      }
-
-
+function numOfMineNeighbours(mines, width, i, rowsAbove, rowsBelow, columnsLeft, columnsRight) {
+  // returns the number of mines in the neighbouring cells to cell i
+  var numOfMineNeighbours = 0;
+  for (let r = -rowsAbove; r <= rowsBelow; r++) {
+    for (let c = -columnsLeft; c <= columnsRight; c++) {
       if (mines[i + (r * width) + c]) {
-        numMinesNear++;
+        numOfMineNeighbours++;
       }
     }
   }
-  if (numMinesNear == 0) { return "" }
-  return numMinesNear;
+  return numOfMineNeighbours;
 }
+
+function setMineProximities(mines, width) {
+  var proximities = Array(mines.length);
+  for (let i = 0; i < mines.length; i++) {
+    if (mines[i]) {
+      proximities[i] = "X";
+      continue;
+    }
+    proximities[i] = numOfMineNeighbours(mines, width, i, ...neighbouringCells(i, width));
+  }
+  return proximities;
+}
+
 
 class App extends Component {
   constructor(props) {
@@ -92,41 +120,164 @@ class App extends Component {
       minesLeft: this.maxMines,
       mines: Array(this.numCells).fill(null),
       minesSet: false,
-      cellClasses: Array(this.numCells).fill("cell"),
+      cellClasses: Array(this.numCells).fill(" cell"),
+      mineProximities: Array(this.numCells),
     };
+  }
+
+  setBlankCellClasses(i, width) {
+    this.showAdjacentBlankCells(i, width, ...neighbouringCells(i, width))
+  }
+
+  showAdjacentBlankCells(i, width, rowsAbove, rowsBelow, columnsLeft, columnsRight) {
+    // sets adjacent blank cells to show when clicked
+
+    const proximities = this.state.mineProximities;
+    const classes = this.state.cellClasses;
+    const cells = this.state.cells;
+
+    classes[i] += " cellPressed";
+    cells[index] = proximities[index];
+
+    for (let r = -rowsAbove; r <= rowsBelow; r++) {
+      for (let c = -columnsLeft; c <= columnsRight; c++) {
+        var index = i + (r * width) + c;
+        if (proximities[index] === 0) {
+          //alert("surrounding cell is also blank");
+          proximities[index] = "";
+          this.setState({
+            mineProximities: proximities,
+            cellClasses: classes,
+            cells: cells,
+          })
+          this.showAdjacentBlankCells(index, width, ...neighbouringCells(index, width));
+        }
+        classes[index] += " cellPressed";
+        cells[index] = proximities[index];
+      }
+    }
+    this.setState({
+      mineProximities: proximities,
+      cellClasses: classes,
+      cells: cells,
+    })
   }
   
   cellClick(i) {
-    if (this.state.minesLeft == 0 || this.state.cells[i]) {
+    if (this.state.cells[i] != null) { // cell already clicked
       return;
     }
-    if (!this.state.minesSet) {
+    var firstProximity = 0;
+    var cells = this.state.cells.slice();
+    var cellClasses = this.state.cellClasses;
+
+    if (!this.state.minesSet) { // set mines if not already set
+      const mines = setMines(i, this.numCells, this.maxMines);
+      var mineProximities = setMineProximities(mines, this.width); // set the proximities too
+      firstProximity = mineProximities[i];  // set first proximity because setState is slow
+      cells[i] = firstProximity;
+      cellClasses[i] += " cellPressed";
+
       this.setState({
         minesSet: true,
-        mines: setMines(i, this.numCells, this.maxMines),
+        mines: mines,
+        mineProximities: mineProximities,
+        cells, 
+        cellClasses,
+      });
+
+    } else {
+      const mines = this.state.mines;
+      mineProximities = this.state.mineProximities;
+      
+      if (mines[i]) {
+        cellClasses[i] += " cellIsMinePressed";
+        for (let j = 0; j < this.numCells; j++) {
+          if (mines[j]) {  
+            cellClasses[j] += " cellIsMine"
+            cells[j] = '!';
+          } else {
+            cells[j] = mineProximities[j] == 0 ? "" : mineProximities[j];
+          }
+        }
+        this.setState({
+          cellClasses,
+        })
+      }
+      if (mineProximities[i] === 0) {
+        this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
+        cells = this.state.cells;
+        cellClasses = this.state.cellClasses;
+        mineProximities = this.state.mineProximities;
+      }
+      cells[i] = mines[i] ? '!' : mineProximities[i];
+      cellClasses[i] += " cellPressed";
+      this.setState({
+        cells,
+        cellClasses,
+        mineProximities,
       });
     }
-    const cells = this.state.cells.slice();
-    const mines = this.state.mines;
-    const cellClasses = this.state.cellClasses;
-    var proximity;
+  }
 
-    if (mines[i]) {
-      cellClasses[i] += " cellIsMine";
-      this.setState({
-        minesLeft: this.state.minesLeft - 1,
-        cellClasses,
-      })
-    } else {
-      proximity = setProximity(i, mines, this.width);
-      
+  cellClick2(i) {
+    if (this.state.cells[i] != null) { // cell already clicked
+      return;
     }
-    cells[i] = mines[i] ? '!' : proximity;
-    cellClasses[i] += " cellPressed";
-    this.setState({
-      cells,
-      cellClasses,
-    });
+    var firstProximity = 0;
+    var cells = this.state.cells.slice();
+    var cellClasses = this.state.cellClasses;
+
+    if (!this.state.minesSet) { // set mines if not already set
+      const mines = setMines(i, this.numCells, this.maxMines);
+      var mineProximities = setMineProximities(mines, this.width); // set the proximities too
+      firstProximity = mineProximities[i];  // set first proximity because setState is slow
+      alert(firstProximity);
+      cells[i] = firstProximity;
+      cellClasses[i] += " cellPressed";
+
+      this.setState({
+        minesSet: true,
+        mines: mines,
+        mineProximities: mineProximities,
+        cells, 
+        cellClasses,
+      });
+
+    } else {
+      const mines = this.state.mines;
+      mineProximities = this.state.mineProximities;
+      
+      if (mines[i]) {
+        cellClasses[i] += " cellIsMinePressed";
+        for (let j = 0; j < this.numCells; j++) {
+          if (mines[j]) {  
+            cellClasses[j] += " cellIsMine"
+            cells[j] = '!';
+          } else {
+            cells[j] = mineProximities[j] == 0 ? "" : mineProximities[j];
+          }
+        }
+        // change this stuff with flags
+        this.setState({
+          //minesLeft: this.state.minesLeft - 1,
+          cellClasses,
+        })
+      }
+      if (mineProximities[i] === 0) {
+        this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
+        cells = this.state.cells;
+        cellClasses = this.state.cellClasses;
+        mineProximities = this.state.mineProximities;
+      }
+      cells[i] = mines[i] ? '!' : mineProximities[i];
+      cellClasses[i] += " cellPressed";
+      this.setState({
+        cells,
+        cellClasses,
+        mineProximities,
+      });
+    }
   }
 
   resetGame() {
@@ -135,7 +286,8 @@ class App extends Component {
       minesLeft: this.maxMines,
       mines: Array(this.numCells).fill(null),
       minesSet: false,
-      cellClasses: Array(this.numCells).fill("cell"),
+      cellClasses: Array(this.numCells).fill(" cell"),
+      mineProximities: Array(this.numCells),//.fill(0),
     })
   }
 
@@ -147,7 +299,6 @@ class App extends Component {
     const cellClasses = this.state.cellClasses;
    
     return (
-
       <div className="App">
         <header className="App-header">
           <h2 className="App-title">Minesweeper</h2>

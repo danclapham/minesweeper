@@ -47,9 +47,12 @@
 }
 
 .cellIsMine, .cellIsMine:hover {
-  background: #881313;
+  background: #bd1b1b;
 }
 
+.cellIsMinePressed, .cellIsMinePressed:hover {
+  background: #881313;
+}
 
 
 .resetButton {
