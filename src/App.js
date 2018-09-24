@@ -125,10 +125,6 @@ class App extends Component {
     };
   }
 
-  setBlankCellClasses(i, width) {
-    this.showAdjacentBlankCells(i, width, ...neighbouringCells(i, width))
-  }
-
   showAdjacentBlankCells(i, width, rowsAbove, rowsBelow, columnsLeft, columnsRight) {
     // sets adjacent blank cells to show when clicked
 
@@ -143,7 +139,6 @@ class App extends Component {
       for (let c = -columnsLeft; c <= columnsRight; c++) {
         var index = i + (r * width) + c;
         if (proximities[index] === 0) {
-          //alert("surrounding cell is also blank");
           proximities[index] = "";
           this.setState({
             mineProximities: proximities,
@@ -173,56 +168,8 @@ class App extends Component {
     var mines = this.state.mines;
     var mineProximities = this.state.mineProximities;
 
-    if (!this.state.minesSet) { // set mines if not already set
-      mines = setMines(i, this.numCells, this.maxMines);
-      mineProximities = setMineProximities(mines, this.width); // set the proximities too
-      firstProximity = mineProximities[i];  // set first proximity because setState is slow
-      cells[i] = firstProximity;
-      cellClasses[i] += " cellPressed";
-
-      this.setState({
-        minesSet: true,
-        mines: mines,
-        mineProximities: mineProximities,
-        cells, 
-        cellClasses,
-      });
-
-    } else {
-      if (mines[i]) {
-        cellClasses[i] += " cellIsMinePressed";
-        for (let j = 0; j < this.numCells; j++) {
-          if (mines[j]) {  
-            cellClasses[j] += " cellIsMine"
-            cells[j] = '!';
-          } else {
-            cells[j] = mineProximities[j] == 0 ? "" : mineProximities[j];
-          }
-        }
-      }
-      cells[i] = mines[i] ? '!' : mineProximities[i];
-      cellClasses[i] += " cellPressed";
-      this.setState({
-        cells,
-        cellClasses,
-        mineProximities,
-      });
-      if (mineProximities[i] == 0) {
-        this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
-      }
-      
-    }
-  }
-
-  cellClick2(i) {
-    if (this.state.cells[i] != null) { // cell already clicked
-      return;
-    }
-    var firstProximity = 0;
-    var cells = this.state.cells.slice();
-    var cellClasses = this.state.cellClasses;
-    var mines = this.state.mines;
-    var mineProximities = this.state.mineProximities;
+    cells[i] = mines[i] ? '!' : mineProximities[i];
+    cellClasses[i] += " cellPressed";
 
     if (!this.state.minesSet) { // set mines if not already set
       mines = setMines(i, this.numCells, this.maxMines);
@@ -230,39 +177,30 @@ class App extends Component {
       firstProximity = mineProximities[i];  // set first proximity because setState is slow
       cells[i] = firstProximity;
       cellClasses[i] += " cellPressed";
-
-      this.setState({
-        minesSet: true,
-        mines: mines,
-        mineProximities: mineProximities,
-        cells, 
-        cellClasses,
-      });
-
-    } else {
-      if (mines[i]) {
-        cellClasses[i] += " cellIsMinePressed";
-        for (let j = 0; j < this.numCells; j++) {
-          if (mines[j]) {  
-            cellClasses[j] += " cellIsMine"
-            cells[j] = '!';
-          } else {
-            cells[j] = mineProximities[j] == 0 ? "" : mineProximities[j];
-          }
+    }
+    if (mines[i]) {
+      cellClasses[i] += " cellIsMinePressed";
+      for (let j = 0; j < this.numCells; j++) {
+        if (mines[j]) {  
+          cellClasses[j] += " cellIsMine"
+          cells[j] = '!';
+        } else {
+          cells[j] = mineProximities[j] == 0 ? "" : mineProximities[j];
         }
       }
-      cells[i] = mines[i] ? '!' : mineProximities[i];
-      cellClasses[i] += " cellPressed";
-      this.setState({
-        cells,
-        cellClasses,
-        mineProximities,
-      });
+    }
+    this.setState({
+      minesSet: true,
+      cells: cells,
+      cellClasses,
+      mineProximities,
+      mines,
+    },
+    function() {
       if (mineProximities[i] == 0) {
         this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
       }
-      
-    }
+    });    
   }
 
   resetGame() {
