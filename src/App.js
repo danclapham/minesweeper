@@ -170,10 +170,12 @@ class App extends Component {
     var firstProximity = 0;
     var cells = this.state.cells.slice();
     var cellClasses = this.state.cellClasses;
+    var mines = this.state.mines;
+    var mineProximities = this.state.mineProximities;
 
     if (!this.state.minesSet) { // set mines if not already set
-      const mines = setMines(i, this.numCells, this.maxMines);
-      var mineProximities = setMineProximities(mines, this.width); // set the proximities too
+      mines = setMines(i, this.numCells, this.maxMines);
+      mineProximities = setMineProximities(mines, this.width); // set the proximities too
       firstProximity = mineProximities[i];  // set first proximity because setState is slow
       cells[i] = firstProximity;
       cellClasses[i] += " cellPressed";
@@ -187,9 +189,6 @@ class App extends Component {
       });
 
     } else {
-      const mines = this.state.mines;
-      mineProximities = this.state.mineProximities;
-      
       if (mines[i]) {
         cellClasses[i] += " cellIsMinePressed";
         for (let j = 0; j < this.numCells; j++) {
@@ -200,15 +199,6 @@ class App extends Component {
             cells[j] = mineProximities[j] == 0 ? "" : mineProximities[j];
           }
         }
-        this.setState({
-          cellClasses,
-        })
-      }
-      if (mineProximities[i] === 0) {
-        this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
-        cells = this.state.cells;
-        cellClasses = this.state.cellClasses;
-        mineProximities = this.state.mineProximities;
       }
       cells[i] = mines[i] ? '!' : mineProximities[i];
       cellClasses[i] += " cellPressed";
@@ -217,6 +207,10 @@ class App extends Component {
         cellClasses,
         mineProximities,
       });
+      if (mineProximities[i] == 0) {
+        this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
+      }
+      
     }
   }
 
@@ -227,12 +221,13 @@ class App extends Component {
     var firstProximity = 0;
     var cells = this.state.cells.slice();
     var cellClasses = this.state.cellClasses;
+    var mines = this.state.mines;
+    var mineProximities = this.state.mineProximities;
 
     if (!this.state.minesSet) { // set mines if not already set
-      const mines = setMines(i, this.numCells, this.maxMines);
-      var mineProximities = setMineProximities(mines, this.width); // set the proximities too
+      mines = setMines(i, this.numCells, this.maxMines);
+      mineProximities = setMineProximities(mines, this.width); // set the proximities too
       firstProximity = mineProximities[i];  // set first proximity because setState is slow
-      alert(firstProximity);
       cells[i] = firstProximity;
       cellClasses[i] += " cellPressed";
 
@@ -245,9 +240,6 @@ class App extends Component {
       });
 
     } else {
-      const mines = this.state.mines;
-      mineProximities = this.state.mineProximities;
-      
       if (mines[i]) {
         cellClasses[i] += " cellIsMinePressed";
         for (let j = 0; j < this.numCells; j++) {
@@ -258,17 +250,6 @@ class App extends Component {
             cells[j] = mineProximities[j] == 0 ? "" : mineProximities[j];
           }
         }
-        // change this stuff with flags
-        this.setState({
-          //minesLeft: this.state.minesLeft - 1,
-          cellClasses,
-        })
-      }
-      if (mineProximities[i] === 0) {
-        this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
-        cells = this.state.cells;
-        cellClasses = this.state.cellClasses;
-        mineProximities = this.state.mineProximities;
       }
       cells[i] = mines[i] ? '!' : mineProximities[i];
       cellClasses[i] += " cellPressed";
@@ -277,6 +258,10 @@ class App extends Component {
         cellClasses,
         mineProximities,
       });
+      if (mineProximities[i] == 0) {
+        this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
+      }
+      
     }
   }
 
