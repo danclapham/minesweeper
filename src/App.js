@@ -253,7 +253,7 @@ class App extends Component {
   }
 
   decrementWidth(dec) {
-    var width = Math.max(this.state.width - dec, 1);
+    var width = Math.max(this.state.width - dec, 5);
     var maxMines = this.state.maxMines;
     if (maxMines > width * width - 2) {
       maxMines = width * width - 2;
@@ -352,15 +352,9 @@ class App extends Component {
                 <h2 className="options-title">Options</h2>
                 <div className="option">
                   <h3 className="option-title">Width:  </h3>
-                  <button 
-                    className="options-button" 
-                    onClick={() => this.decrementWidth(1)}
-                  >-</button>
+                  <button className="options-button" onClick={() => this.decrementWidth(1)}>-</button>
                   <b> {this.state.width} </b>
-                  <button 
-                    className="options-button" 
-                    onClick={() => this.incrementWidth(1)}
-                  >+</button>
+                  <button className="options-button" onClick={() => this.incrementWidth(1)}>+</button>
                 </div>
                 <br></br>
                 <div className="option">
@@ -372,34 +366,28 @@ class App extends Component {
               </div>
             </Grid>
             
-            <Grid item xs={4}>
-              <div className="game-header">
-                <h3>Mines left: {this.state.minesLeft}</h3>
-
-                <button className={resetButtonClass} onClick={() => this.resetGame()}>{resetButtonText}</button>
+            <Grid item xs={6}>
+              <Grid container spacing={24} className="game-header">
+                <Grid item xs={2}></Grid>
+                <Grid item xs><h3>Mines left: {this.state.minesLeft}</h3></Grid>
+                <Grid item xs={4}><button className={resetButtonClass} onClick={() => this.resetGame()}>{resetButtonText}</button></Grid>
+                <Grid item xs><h3>Timer: 000s</h3></Grid>
+                <Grid item xs={2}></Grid>
+              </Grid>
+              <div className="game-board">
+                <Board 
+                  width={this.state.width}
+                  onClick={i => this.cellClick(i)}
+                  onContextMenu={i => this.cellRightClick(i)}
+                  cells={cells}
+                  cellClasses={cellClasses}
+                />
               </div>
             </Grid>
+
             <Grid item xs></Grid>
           </Grid>
-        </div>
-
-        <Grid container spacing={24}>
-          <Grid item xs></Grid>
-          <Grid item xs={6}>
-            <div className="game-board">
-              <Board 
-                width={this.state.width}
-                onClick={i => this.cellClick(i)}
-                onContextMenu={i => this.cellRightClick(i)}
-                cells={cells}
-                cellClasses={cellClasses}
-              />
-            </div>
-          </Grid>
-          <Grid item xs></Grid>
-        </Grid>
-
-        
+        </div>       
       </div>
     );   
   }
