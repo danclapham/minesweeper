@@ -22,6 +22,7 @@ class Board extends Component {
       value={this.props.cells[i]} 
       key={i}
       onClick={() => this.props.onClick(i)}
+      onContextMenu={() => this.props.onContextMenu(i)}
     />;
   }
 

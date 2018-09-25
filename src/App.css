@@ -31,14 +31,14 @@
   background: #444444;
   color: #ffffff;
   border: none;
-  margin: 2px;
-  border-radius: 5px;
+  margin: 1px;
+  border-radius: 2px;
   text-align: center;
   font-weight: bold;
+  font-size: 1em;
 }
 
 .cell:hover {
-  background: #222;
   background: #1a73e9;
 }
 
@@ -52,6 +52,35 @@
 
 .cellIsMinePressed, .cellIsMinePressed:hover {
   background: #881313;
+}
+
+
+.n2 { 
+  color: #1eff00;
+}
+.n3 {
+  color: #ff0000;
+}
+.n4 {
+  color: #ff9900;
+}
+.n5 {
+  color: #00fff2;
+}
+.n6 {
+  color: #fbff00;
+}
+.n7 {
+  color: #ff00dd;
+}
+
+
+.flag {
+  background: #24ad11;
+}
+
+.flagPressed, .flag:hover {
+  background: #1a850c;
 }
 
 
