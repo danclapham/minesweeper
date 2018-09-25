@@ -112,18 +112,18 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    this.width = 8; // let user change this later
-    this.numCells = this.width * this.width;
-    this.maxMines = Math.ceil(this.numCells * 0.1); // let user change later
+    this.numCells = 81;
 
     this.state = {
+      width: 9,
+      maxMines: 10,
       cells: Array(this.numCells).fill(null),
-      minesLeft: this.maxMines,
+      minesLeft: 10,
       mines: Array(this.numCells).fill(null),
       minesSet: false,
       cellClasses: Array(this.numCells).fill(" cell"),
       mineProximities: Array(this.numCells),
-      gameOver: false,
+      gameStatus: "play",
     };
   }
 
@@ -141,31 +141,21 @@ class App extends Component {
     cellClasses[i] += " cellPressed";
 
     if (!this.state.minesSet) { // set mines if not already set
-      mines = setMines(i, this.numCells, this.maxMines);
-      mineProximities = setMineProximities(mines, this.width); // set the proximities too
+      mines = setMines(i, this.state.width * this.state.width, this.state.maxMines);
+      mineProximities = setMineProximities(mines, this.state.width); // set the proximities too
       firstProximity = mineProximities[i];  // set first proximity because setState is slow
       cells[i] = firstProximity;
       cellClasses[i] += " cellPressed";
-      for (let j = 0; j < this.numCells; j++) {
+      for (let j = 0; j < this.state.width * this.state.width; j++) {
         cellClasses[j] += " n" + mineProximities[j];
       }
     }
-    if (mines[i]) { // if mine is clicked on
-      cellClasses[i] += " cellIsMinePressed";
-      for (let j = 0; j < this.numCells; j++) {
-        if (mines[j]) {  
-          cellClasses[j] += " cellIsMine";
-          cells[j] = '!';
-        } else {
-          cells[j] = mineProximities[j] === 0 ? "" : mineProximities[j];
-        }
-        if (cellClasses[j].includes("flag")) {
-          cellClasses[j] += " flagPressed";
-        } 
-      }
+    if (mines[i]) { // if mine is clicked on, end game
       this.setState({
-        gameOver: true, // end game
+        gameStatus: "lose",
       })
+      this.endGame(i, "lose");
+      return;
     }
     this.setState({
       minesSet: true,
@@ -173,12 +163,13 @@ class App extends Component {
       cellClasses,
       mineProximities,
       mines,
+      cellsClicked: this.state.cellsClicked + 1,
     },
     function() {
       if (mineProximities[i] === 0) {
-        this.showAdjacentBlankCells(i, this.width, ...neighbouringCells(i, this.width));
+        this.showAdjacentBlankCells(i, this.state.width, ...neighbouringCells(i, this.state.width));
       }
-    });    
+    });
   }
 
   cellRightClick(i) { // for adding flag to cell
@@ -214,23 +205,20 @@ class App extends Component {
     const classes = this.state.cellClasses;
     const cells = this.state.cells;
 
-    classes[i] += " cellPressed";
-    //cells[index] = proximities[index];
-
     for (let r = -rowsAbove; r <= rowsBelow; r++) {
       for (let c = -columnsLeft; c <= columnsRight; c++) {
         var index = i + (r * width) + c;
-        if (proximities[index] === 0) {
+        if (proximities[index] === 0) {//} && !classes[index].includes("flag")) {
           proximities[index] = "";
           this.setState({
             mineProximities: proximities,
-            cellClasses: classes,
-            cells: cells,
           })
           this.showAdjacentBlankCells(index, width, ...neighbouringCells(index, width));
         }
-        classes[index] += " cellPressed";
-        cells[index] = proximities[index];
+        if (!classes[index].includes("flag")) {
+          classes[index] += " cellPressed";
+          cells[index] = proximities[index];
+        }
       }
     }
     this.setState({
@@ -239,26 +227,118 @@ class App extends Component {
       cells: cells,
     })
   }
+
+  endGame(i = this.state.width * this.state.width, gameStatus) {
+    var cells = this.state.cells.slice();
+    var cellClasses = this.state.cellClasses;
+
+    if (i < this.state.width * this.state.width && this.state.mines[i]) {
+      cellClasses[i] += " cellIsMinePressed";
+    }
+    for (let j = 0; j < this.state.width * this.state.width; j++) {
+      if (this.state.mines[j] && gameStatus != "win") {
+        cellClasses[j] += " cellIsMine";
+        cells[j] = '!';
+      } else if (this.state.mines[j]) {
+        cellClasses[j] += cellClasses[j].includes("flag") ? " flagPressed" : " flag";
+        cells[j] = "⚐";
+      } else {
+        cells[j] = this.state.mineProximities[j] === 0 ? "" : this.state.mineProximities[j];
+      }
+    }
+    this.setState({
+      cellClasses,
+      cells,
+    })
+  }
+
+  decrementWidth(dec) {
+    var width = Math.max(this.state.width - dec, 1);
+    var maxMines = this.state.maxMines;
+    if (maxMines > width * width - 2) {
+      maxMines = width * width - 2;
+    }
+    this.setState({
+      width,
+      maxMines,
+    },
+    function () {
+      this.resetGame()
+    })
+  }
+
+  incrementWidth(inc) {
+    this.setState({
+      width: Math.min(this.state.width + inc, 22),
+      cells: Array(this.state.width * this.state.width).fill(null),
+      cellClasses: Array(this.state.width * this.state.width).fill(" cell"),
+    },
+    function () {
+      this.resetGame();
+    })
+  }
+
+  decrementMaxMines(dec) {
+    var maxMines = Math.max(this.state.maxMines - dec, 1);
+    this.setState({
+      maxMines: maxMines,
+      minesLeft: maxMines,
+    },
+    this.resetGame())
+  }
+
+  incrementMaxMines(inc) {
+    var maxMines = Math.min(this.state.maxMines + inc, this.state.width * this.state.width - 2);
+    this.setState({
+      maxMines: maxMines,
+      minesLeft: maxMines,
+    },
+    this.resetGame())
+  }
   
   resetGame() {
     this.setState({
-      cells: Array(this.numCells).fill(null),
-      minesLeft: this.maxMines,
-      mines: Array(this.numCells).fill(null),
+      cells: Array(this.state.width * this.state.width).fill(null),
+      minesLeft: this.state.maxMines,
+      mines: Array(this.state.width * this.state.width).fill(null),
       minesSet: false,
-      cellClasses: Array(this.numCells).fill(" cell"),
-      mineProximities: Array(this.numCells),
-      gameOver: false,
+      cellClasses: Array(this.state.width * this.state.width).fill(" cell"),
+      mineProximities: Array(this.state.width * this.state.width),
+      gameStatus: "play",
     })
   }
 
   render() {
-    const cells = this.state.cells;
-    const resetButtonText = this.state.gameOver ? "You lose!" : "Game in progress";
-    const resetButtonClass = this.state.gameOver ? "failedResetButton resetButton cell" : "resetButton cell";
+    var resetButtonText;
+    var resetButtonClass;
+
+    switch(this.state.gameStatus) {
+      case "play":
+        resetButtonText = "Game in progress";
+        resetButtonClass = "resetButton cell";
+        break;
+      case "win":
+        resetButtonText = "You win!";
+        resetButtonClass = "successResetButton resetButton cell";
+        break;
+      default:
+        resetButtonText = "You lose!";
+        resetButtonClass = "failedResetButton resetButton cell";
+    }
+    var cellsClicked = this.state.cells.filter((item) => item != null).length;
+    var numFlags = this.state.cellClasses.filter((item) => item.includes("flag")).length;
+
+    if (cellsClicked - numFlags === this.state.width * this.state.width - this.state.maxMines && this.state.gameStatus != "win") {  // if game won
+      this.setState({
+        gameStatus: "win",
+      },
+        this.endGame(this.state.width * this.state.width, "win"),
+      )
+    }    
     const { classes } = this.props;
+    const cells = this.state.cells;
     const cellClasses = this.state.cellClasses;
-   
+
     return (
       <div className="App">
         <header className="App-header">
@@ -266,18 +346,41 @@ class App extends Component {
         </header>
         <div className={classes.root}>
 
-        <Grid container spacing={24}>
-          <Grid item xs>
-            <h3></h3>
+          <Grid container spacing={24}>
+            <Grid item xs>
+              <div className="options-panel">
+                <h2 className="options-title">Options</h2>
+                <div className="option">
+                  <h3 className="option-title">Width:  </h3>
+                  <button 
+                    className="options-button" 
+                    onClick={() => this.decrementWidth(1)}
+                  >-</button>
+                  <b> {this.state.width} </b>
+                  <button 
+                    className="options-button" 
+                    onClick={() => this.incrementWidth(1)}
+                  >+</button>
+                </div>
+                <br></br>
+                <div className="option">
+                  <h3 className="option-title">Mines:</h3>
+                  <button className="options-button" onClick={() => this.decrementMaxMines(1)}>-</button>
+                  <b> {this.state.maxMines} </b>
+                  <button className="options-button" onClick={() => this.incrementMaxMines(1)}>+</button>
+                </div>
+              </div>
+            </Grid>
+            
+            <Grid item xs={4}>
+              <div className="game-header">
+                <h3>Mines left: {this.state.minesLeft}</h3>
+
+                <button className={resetButtonClass} onClick={() => this.resetGame()}>{resetButtonText}</button>
+              </div>
+            </Grid>
+            <Grid item xs></Grid>
           </Grid>
-          <Grid item xs={6}>
-            <div className="game-header">
-              <h3>Mines left: {this.state.minesLeft}</h3>
-              <button className={resetButtonClass} onClick={() => this.resetGame()}>{resetButtonText}</button>
-            </div>
-          </Grid>
-          <Grid item xs></Grid>
-        </Grid>
         </div>
 
         <Grid container spacing={24}>
@@ -285,9 +388,8 @@ class App extends Component {
           <Grid item xs={6}>
             <div className="game-board">
               <Board 
-                width={this.width}
+                width={this.state.width}
                 onClick={i => this.cellClick(i)}
-                //onContextMenu="javascript:alert('success!');return false;"
                 onContextMenu={i => this.cellRightClick(i)}
                 cells={cells}
                 cellClasses={cellClasses}

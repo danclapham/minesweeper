@@ -22,6 +22,19 @@
   margin-top: 40px;
 }
 
+.options-panel {
+  padding: 20px;
+}
+
+.option {
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.option-title {
+  display: inline;
+  margin-right: 20px;
+}
 
 
 .cell {
@@ -30,7 +43,7 @@
   vertical-align: top;
   background: #444444;
   color: #ffffff;
-  border: none;
+  border: 1px white;
   margin: 1px;
   border-radius: 2px;
   text-align: center;
@@ -73,14 +86,19 @@
 .n7 {
   color: #ff00dd;
 }
+.n8 {
+  color: #ffc400;
+}
 
 
 .flag {
   background: #24ad11;
+  color: white;
 }
 
 .flagPressed, .flag:hover {
   background: #1a850c;
+  color: white;
 }
 
 
@@ -95,12 +113,24 @@
   background: rgb(16, 73, 179);
 }
 
+.successResetButton {
+  background: #24ad11;
+}
+
+.successResetButton:hover {
+  background: #1a850c;
+}
+
 .failedResetButton {
   background: #bd1b1b;
 }
 
 .failedResetButton:hover {
   background: #881313;
+}
+
+:focus {  
+  outline: none !important;
 }
 
 @keyframes App-logo-spin {
