@@ -131,6 +131,7 @@ class App extends Component {
       mineProximities: Array(this.numCells),
       gameStatus: "play", // gameStatus = ["play", "win", "lose"]; used for changing button elements and ending the game
       timerStatus: null,
+      widthInput: 9,
     };
   }
 
@@ -251,10 +252,10 @@ class App extends Component {
     var index;  // initialise
     const cells = this.state.cells.slice();
 
-    for (r = -rowsAbove; r <= rowsBelow; r++) {
+    for (r = -rowsAbove; r <= rowsBelow; r++) { // loop over neighbour cells
       for (c = -columnsLeft; c <= columnsRight; c++) {
         index = i + (r * width) + c;
-        if (this.state.mines[index] && !this.state.cellClasses[index].includes("flag")) {
+        if (this.state.mines[index] && !this.state.cellClasses[index].includes("flag")) { // if there is a mine that isn't flagged, return
           return;
         }
       }
@@ -262,11 +263,11 @@ class App extends Component {
     for (r = -rowsAbove; r <= rowsBelow; r++) {
       for (c = -columnsLeft; c <= columnsRight; c++) {
         index = i + (r * width) + c;
-        if (!this.state.cellClasses[index].includes("Pressed") && !this.state.cellClasses[index].includes("flag")) {
-          this.cellClick(index);
+        if (!this.state.cellClasses[index].includes("Pressed") && !this.state.cellClasses[index].includes("flag")) {  // if not pressed or a flag
+          this.cellClick(index);  // click that cell
           cells[index] = this.state.mineProximities[index];
-          this.setState({
-            cells,
+          this.setState({ // update state as cellClick state updates too slowly
+            cells,  
           })
         }
       }
@@ -303,31 +304,26 @@ class App extends Component {
     })
   }
 
-  decrementWidth(dec) {
-    // updates state with smaller grid size
-    var width = Math.max(this.state.width - dec, 5);  // width minimum of 5x5
-    var maxMines = this.state.maxMines;
-    if (maxMines > width * width - 2) { // decrease maxMines so that there are fewer mines than cells
-      maxMines = width * width - 2;
-    }
+  changeWidth(event) {
+    var width = event.target.value;
+    if (width < 5) { return; }
     this.setState({
       width,
-      maxMines,
-    },
-    function () {
-      this.resetGame()  // reset game to blank state with new size
+    }, function() {
+      this.resetGame()
     })
   }
 
-  incrementWidth(inc) {
-    // updates state with larger grid size
+
+
+  changeMaxMines(event) {
+    var maxMines = event.target.value;
+    if (maxMines > this.state.width * this.state.width - 2) {
+      maxMines = this.state.width * this.state.width - 2;
+    } 
     this.setState({
-      width: Math.min(this.state.width + inc, 22),  // width maximum of 22x22
-      // calling resetGame() can lead to delayed changes in grid, so reset some grid details here first to avoid
-      cells: Array(this.state.width * this.state.width).fill(null),
-      cellClasses: Array(this.state.width * this.state.width).fill(" cell"),
-    },
-    function () {
+      maxMines,
+    }, function () {
       this.resetGame(); // reset game to blank state with new size
     })
   }
@@ -363,6 +359,7 @@ class App extends Component {
       mineProximities: Array(this.state.width * this.state.width),
       gameStatus: "play",
       timerStatus: null,
+      widthInput: this.state.width,
     })
   }
 
@@ -417,28 +414,50 @@ class App extends Component {
               <div className="options-panel">
                 <h2 className="options-title">Options</h2>
                 <div className="option">
-                  <h3 className="option-title">Width:  </h3>
-                  <button className="option-button redButton" onClick={() => this.decrementWidth(1)}>-</button>
-                  <b> {this.state.width} </b>
-                  <button className="option-button greenButton" onClick={() => this.incrementWidth(1)}>+</button>
+
+                  <form>
+                    <label>
+                      Width:
+                      <input 
+                        className="input" 
+                        type="number" 
+                        value={this.state.width} 
+                        min="5" 
+                        max="22"
+                        pattern="[0-9]*" 
+                        inputmode="numeric" 
+                        onChange={this.changeWidth.bind(this)} 
+                      />
+                    </label>
+                  </form>
                 </div>
                 <br></br>
                 <div className="option">
-                  <h3 className="option-title">Mines:</h3>
-                  <button className="option-button redButton" onClick={() => this.decrementMaxMines(1)}>-</button>
-                  <b> {this.state.maxMines} </b>
-                  <button className="option-button greenButton" onClick={() => this.incrementMaxMines(1)}>+</button>
+                  <form>
+                    <label>
+                      Mines:
+                      <input 
+                      className="input" 
+                      type="number" 
+                      value={this.state.maxMines} 
+                      min="1" 
+                      max={this.state.width * this.state.width - 2}
+                      pattern="[0-9]*" 
+                      inputmode="numeric" 
+                      onChange={this.changeMaxMines.bind(this)} />
+                    </label>
+                  </form>
                 </div>
               </div>
             </Grid>
             
             <Grid item xs={6}>
               <Grid container spacing={24} className="game-header">
-                <Grid item xs={2}></Grid>
+                <Grid item xs={1}></Grid>
                 <Grid item xs><h3>Mines left: {this.state.minesLeft}</h3></Grid>
                 <Grid item xs={4}><button className={resetButtonClass} onClick={() => this.resetGame()}>{resetButtonText}</button></Grid>
                 <Grid item xs>{timer}</Grid> 
-                <Grid item xs={2}></Grid>
+                <Grid item xs={1}></Grid>
               </Grid>
               <div className="game-board">
                 <Board 
