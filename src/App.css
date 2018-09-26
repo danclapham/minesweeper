@@ -26,6 +26,18 @@
   padding: 30px;
 }
 
+.option-button {
+  width:  20px;
+  height: 20px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  font-size: 0.9em;
+  text-align: center;
+  vertical-align: center;
+  color: white;
+}
+
 .option {
   display: inline-block;
   margin-top: 10px;
@@ -112,19 +124,19 @@
 
 
 
-.successResetButton {
+.greenButton {
   background: #24ad11;
 }
 
-.successResetButton:hover {
+.greenButton:hover {
   background: #1a850c;
 }
 
-.failedResetButton {
+.redButton {
   background: #bd1b1b;
 }
 
-.failedResetButton:hover {
+.redButton:hover {
   background: #881313;
 }
 
