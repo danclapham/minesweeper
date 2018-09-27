@@ -183,6 +183,7 @@ class App extends Component {
   }
 
   cellDoubleClick(i) {
+    // if cell is double-clicked, reveal all cells around it unless a mine is near (do nothing) or an incorrect flag (lose game)
     if (this.state.cells[i] === "" || this.state.cellClasses[i].includes("flag")) { // cell blank or a flag
       return;
     } 
@@ -251,11 +252,24 @@ class App extends Component {
     var r, c;
     var index;  // initialise
     const cells = this.state.cells.slice();
+    var flagNeighbours = 0;
 
     for (r = -rowsAbove; r <= rowsBelow; r++) { // loop over neighbour cells
       for (c = -columnsLeft; c <= columnsRight; c++) {
         index = i + (r * width) + c;
-        if (this.state.mines[index] && !this.state.cellClasses[index].includes("flag")) { // if there is a mine that isn't flagged, return
+        if (this.state.cellClasses[index].includes("flag")) {
+          flagNeighbours++; // count flags around cell i
+        }
+      }
+    }
+    if (flagNeighbours != this.state.mineProximities[i]) {  // if number of flags doesn't match number of mines, do nothing
+      return;
+    }
+    for (r = -rowsAbove; r <= rowsBelow; r++) { // loop over neighbour cells
+      for (c = -columnsLeft; c <= columnsRight; c++) {
+        index = i + (r * width) + c;
+        if (this.state.mines[index] && !this.state.cellClasses[index].includes("flag")) { // if there is an incorrect flag, lose game
+          this.endGame(index, "lose");
           return;
         }
       }
