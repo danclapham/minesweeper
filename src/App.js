@@ -32,7 +32,7 @@ function shuffle(array) {
   return array;
 }
 
-function neighbouringCells(i, width) {
+function neighbouringCells(i, width, height) {
   // returns array of number of rows/columns around clicked cell: [rowsAbove, rowsBelow, columnsLeft, columnsRight]
   //   e.g. a top left corner cell should have rowsAbove = columnsLeft = 0 as they would be outside the grid
   switch (i) {  // deal with corners first
@@ -40,15 +40,15 @@ function neighbouringCells(i, width) {
       return [0, 1, 0, 1];
     case width - 1: // top right corner
       return [0, 1, 1, 0];
-    case width * (width - 1): // bottom left corner
+    case width * (height - 1): // bottom left corner
       return [1, 0, 0, 1];
-    case width * width - 1: // bottom right corner
+    case width * height - 1: // bottom right corner
       return [1, 0, 1, 0];
     default:
   }
   if (i < width) {  // top edge
     return [0, 1, 1, 1];
-  } else if (width * (width -1) < i && i < width * width) { // bottom edge
+  } else if (width * (height -1) < i && i < width * height) { // bottom edge
     return [1, 0, 1, 1];
   } else if (i % width === 0) { // left edge
     return [1, 1, 0, 1];
@@ -99,7 +99,7 @@ function numOfMineNeighbours(mines, width, i, rowsAbove, rowsBelow, columnsLeft,
   return numOfMineNeighbours;
 }
 
-function setMineProximities(mines, width) {
+function setMineProximities(mines, width, height) {
   // sets mine proximities in entire grid, called on first click of game
   var proximities = Array(mines.length);
   for (let i = 0; i < mines.length; i++) {
@@ -108,7 +108,7 @@ function setMineProximities(mines, width) {
       continue;
     }
     // use neighbouringCells() to get rowsAbove, rowsBelow, columnsLeft, columnsRight for use in numOfMineNeighbours()
-    proximities[i] = numOfMineNeighbours(mines, width, i, ...neighbouringCells(i, width)); 
+    proximities[i] = numOfMineNeighbours(mines, width, i, ...neighbouringCells(i, width, height)); 
   }
   return proximities;
 }
@@ -122,6 +122,7 @@ class App extends Component {
 
     this.state = {
       width: 9,
+      height: 9,
       maxMines: 10,
       cells: Array(this.numCells).fill(null), // set clear grid for game start
       minesLeft: 10,
@@ -131,7 +132,7 @@ class App extends Component {
       mineProximities: Array(this.numCells),
       gameStatus: "play", // gameStatus = ["play", "win", "lose"]; used for changing button elements and ending the game
       timerStatus: null,
-      widthInput: 9,
+      square: true,
     };
   }
 
@@ -150,12 +151,12 @@ class App extends Component {
     cellClasses[i] += " cellPressed";               // change css class to change colour, etc.
 
     if (!this.state.minesSet) { // set mines if not already set (start of game)
-      mines = setMines(i, this.state.width * this.state.width, this.state.maxMines);
-      mineProximities = setMineProximities(mines, this.state.width); // set the proximities too
+      mines = setMines(i, this.state.width * this.state.height, this.state.maxMines);
+      mineProximities = setMineProximities(mines, this.state.width, this.state.height); // set the proximities too
       firstProximity = mineProximities[i];  // set first proximity because setState can be slow to update in time
       cells[i] = firstProximity;
       cellClasses[i] += " cellPressed";
-      for (let j = 0; j < this.state.width * this.state.width; j++) {
+      for (let j = 0; j < this.state.width * this.state.height; j++) {
         cellClasses[j] += " n" + mineProximities[j];  // update css classes so that each proximity number has its own colour
       }
     }
@@ -177,7 +178,7 @@ class App extends Component {
     },
     function() {  // this is part of setState so that it's called using the up-to-date state. otherwise may not use latest state
       if (mineProximities[i] === 0) { // if cell has no mine neighbours, search around cell and reveal other blank cells
-        this.showNeighbourBlankCells(i, this.state.width, ...neighbouringCells(i, this.state.width));
+        this.showNeighbourBlankCells(i, this.state.width, ...neighbouringCells(i, this.state.width, this.state.height));
       }
     });
   }
@@ -187,7 +188,7 @@ class App extends Component {
     if (this.state.cells[i] === "" || this.state.cellClasses[i].includes("flag")) { // cell blank or a flag
       return;
     } 
-    this.showNeighbourCells(i, this.state.width, ...neighbouringCells(i, this.state.width));
+    this.showNeighbourCells(i, this.state.width, ...neighbouringCells(i, this.state.width, this.state.height));
   }
 
   cellRightClick(i) { 
@@ -232,7 +233,7 @@ class App extends Component {
             mineProximities: proximities,
           })
           // call showNeighbourBlankCells() recursively on neighbour blank cell so that all entire block of blanks is revealed
-          this.showNeighbourBlankCells(index, width, ...neighbouringCells(index, width)); 
+          this.showNeighbourBlankCells(index, width, ...neighbouringCells(index, width, this.state.height)); 
         }
         if (!classes[index].includes("flag")) { // all non-flag non-blank cells around blank block are also revealed, which cannot be mines
           classes[index] += " cellPressed";
@@ -288,17 +289,17 @@ class App extends Component {
     }
   }
 
-  endGame(i = this.state.width * this.state.width, gameStatus) {
+  endGame(i = this.state.width * this.state.height, gameStatus) {
     // ends the game with either win or lose state
     var cells = this.state.cells.slice();
     var cellClasses = this.state.cellClasses;
     var minesLeft = this.state.minesLeft;
 
     // if game is ended by clicking on a mine, set mine css to clicked to change colour
-    if (i < this.state.width * this.state.width && this.state.mines[i]) {
+    if (i < this.state.width * this.state.height && this.state.mines[i]) {
       cellClasses[i] += " cellIsMinePressed";
     }
-    for (let j = 0; j < this.state.width * this.state.width; j++) { // loop through cells in grid
+    for (let j = 0; j < this.state.width * this.state.height; j++) { // loop through cells in grid
       if (this.state.mines[j] && gameStatus != "win") { // if cell is mine and game was lost, show mine to player
         cellClasses[j] += " cellIsMine";
         cells[j] = '!';
@@ -317,23 +318,36 @@ class App extends Component {
       timerStatus: "stopped",
     })
   }
-
-  changeWidth(event) {
-    var width = event.target.value;
-    if (width < 5) { return; }
-    this.setState({
-      width,
-    }, function() {
-      this.resetGame()
-    })
+  // add minechange if too small
+  changeSize(event, dim) {
+    var size = event.target.value;
+    if (size < 5) { return; }
+    if (dim === "width") {
+      this.setState({
+        width: size,
+      }, function() {
+        this.resetGame();
+      })
+    } else if (dim === "height") {
+      this.setState({
+        height: size,
+      }, function() {
+        this.resetGame();
+      })
+    } else {
+      this.setState({
+        width: size,
+        height: size,
+      }, function() {
+        this.resetGame();
+      })
+    }
   }
-
-
 
   changeMaxMines(event) {
     var maxMines = event.target.value;
-    if (maxMines > this.state.width * this.state.width - 2) {
-      maxMines = this.state.width * this.state.width - 2;
+    if (maxMines > this.state.width * this.state.height - 2) {
+      maxMines = this.state.width * this.state.height - 2;
     } 
     this.setState({
       maxMines,
@@ -342,38 +356,17 @@ class App extends Component {
     })
   }
 
-  decrementMaxMines(dec) {
-    // updates state with lower mine number
-    var maxMines = Math.max(this.state.maxMines - dec, 1);  // minimum mine number of 1
-    this.setState({
-      maxMines: maxMines,
-      minesLeft: maxMines,
-    },
-    this.resetGame()) // reset game to blank state with new size
-  }
-
-  incrementMaxMines(inc) {
-    // updates state with higher mine number
-    var maxMines = Math.min(this.state.maxMines + inc, this.state.width * this.state.width - 2);  // max mine number of number of cells - 2
-    this.setState({
-      maxMines: maxMines,
-      minesLeft: maxMines,
-    },
-    this.resetGame()) // reset game to blank state with new size
-  }
-  
   resetGame() {
     // sets the game to a blank grid for a new game
     this.setState({
-      cells: Array(this.state.width * this.state.width).fill(null),
+      cells: Array(this.state.width * this.state.height).fill(null),
       minesLeft: this.state.maxMines,
-      mines: Array(this.state.width * this.state.width).fill(null),
+      mines: Array(this.state.width * this.state.height).fill(null),
       minesSet: false,
-      cellClasses: Array(this.state.width * this.state.width).fill(" cell"),
-      mineProximities: Array(this.state.width * this.state.width),
+      cellClasses: Array(this.state.width * this.state.height).fill(" cell"),
+      mineProximities: Array(this.state.width * this.state.height),
       gameStatus: "play",
       timerStatus: null,
-      widthInput: this.state.width,
     })
   }
 
@@ -398,11 +391,11 @@ class App extends Component {
     var cellsClicked = this.state.cells.filter((item) => item != null).length;  // number of cells that aren't null (which are unclicked)
     var numFlags = this.state.cellClasses.filter((item) => item.includes("flag")).length; // number of flags set in grid
 
-    if (cellsClicked - numFlags === this.state.width * this.state.width - this.state.maxMines && this.state.gameStatus != "win") {  // if game won
+    if (cellsClicked - numFlags === this.state.width * this.state.height - this.state.maxMines && this.state.gameStatus != "win") {  // if game won
       this.setState({
         gameStatus: "win",  // set status to "win"
       },
-        this.endGame(this.state.width * this.state.width, "win"), // end the game with win condition
+        this.endGame(this.state.width * this.state.height, "win"), // end the game with win condition
       )
     }
     let timer;
@@ -410,6 +403,63 @@ class App extends Component {
       timer = <Timer timerStatus={this.state.timerStatus}/>;  // if timer started/stopped, show timer
     } else {
       timer = <h3>Timer: 000</h3>;  // else show placeholder
+    }
+    let changeSize;
+    let changeHeight;
+    if (!this.state.square) {
+      changeSize =    <div className="option">
+                        <form>
+                          <label>
+                            Width:
+                            <input 
+                              className="input" 
+                              type="number" 
+                              value={this.state.width} 
+                              min="5" 
+                              max="30"
+                              pattern="[0-9]*" 
+                              inputmode="numeric" 
+                              onChange={(e) => this.changeSize(e, "width")} 
+                            />
+                          </label>
+                        </form>
+                      </div>;
+
+      changeHeight =  <div className="option">
+                        <form>
+                          <label>
+                            Height:
+                            <input 
+                              className="input" 
+                              type="number" 
+                              value={this.state.height} 
+                              min="5" 
+                              max="100"
+                              pattern="[0-9]*" 
+                              inputmode="numeric" 
+                              onChange={(e) => this.changeSize(e, "height")} 
+                            />
+                          </label>
+                        </form>
+                      </div>;
+    } else {
+      changeSize =    <div className="option">
+                        <form>
+                          <label>
+                            Width:
+                            <input 
+                              className="input" 
+                              type="number" 
+                              value={this.state.width} 
+                              min="5" 
+                              max="30"
+                              pattern="[0-9]*" 
+                              inputmode="numeric" 
+                              onChange={(e) => this.changeSize(e, "size")} 
+                            />
+                          </label>
+                        </form>
+                      </div>;
     }
     
     const { classes } = this.props;
@@ -423,50 +473,45 @@ class App extends Component {
         </header>
         <div className={classes.root}>
 
-          <Grid container spacing={24}> 
+          <Grid container spacing={0}> 
             <Grid item xs>
               <div className="options-panel">
                 <h2 className="options-title">Options</h2>
-                <div className="option">
 
-                  <form>
-                    <label>
-                      Width:
-                      <input 
-                        className="input" 
-                        type="number" 
-                        value={this.state.width} 
-                        min="5" 
-                        max="22"
-                        pattern="[0-9]*" 
-                        inputmode="numeric" 
-                        onChange={this.changeWidth.bind(this)} 
-                      />
-                    </label>
-                  </form>
+                {changeSize}
+
+                {changeHeight}
+                
+                <div className="option">
+                  <label>
+                    Lock square ratio:
+                    <input className="input" type="checkbox" defaultChecked={this.state.square} onChange={() => this.setState({square: !this.state.square})}/>
+                  </label>
                 </div>
-                <br></br>
+               
                 <div className="option">
                   <form>
                     <label>
                       Mines:
                       <input 
-                      className="input" 
-                      type="number" 
-                      value={this.state.maxMines} 
-                      min="1" 
-                      max={this.state.width * this.state.width - 2}
-                      pattern="[0-9]*" 
-                      inputmode="numeric" 
-                      onChange={this.changeMaxMines.bind(this)} />
+                        className="input" 
+                        type="number" 
+                        value={this.state.maxMines} 
+                        min="1" 
+                        max={this.state.width * this.state.height - 2}
+                        pattern="[0-9]*" 
+                        inputmode="numeric" 
+                        onChange={this.changeMaxMines.bind(this)} 
+                      />
                     </label>
                   </form>
                 </div>
+
               </div>
             </Grid>
             
-            <Grid item xs={6}>
-              <Grid container spacing={24} className="game-header">
+            <Grid item xs={7}>
+              <Grid container spacing={0} className="game-header">
                 <Grid item xs={1}></Grid>
                 <Grid item xs><h3>Mines left: {this.state.minesLeft}</h3></Grid>
                 <Grid item xs={4}><button className={resetButtonClass} onClick={() => this.resetGame()}>{resetButtonText}</button></Grid>
@@ -476,6 +521,7 @@ class App extends Component {
               <div className="game-board">
                 <Board 
                   width={this.state.width}
+                  height={this.state.height}
                   onClick={i => this.cellClick(i)}
                   onDoubleClick={i => this.cellDoubleClick(i)}
                   onContextMenu={i => this.cellRightClick(i)}

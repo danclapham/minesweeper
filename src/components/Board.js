@@ -2,11 +2,11 @@ import React, { Component } from 'react';
 import Cell from './Cell.js';
 
 class Board extends Component {
-  createBoard(width) {
+  createBoard(width, height) {
     const board = [];
     let cellCounter = 0;
 
-    for (let i = 0; i < width; i++) {
+    for (let i = 0; i < height; i++) {
       const columns = [];
       for (let j = 0; j < width; j++) {
         columns.push(this.renderCell(cellCounter++));
@@ -29,7 +29,7 @@ class Board extends Component {
 
   render() {
     return (
-      <div>{this.createBoard(this.props.width)}</div>
+      <div>{this.createBoard(this.props.width, this.props.height)}</div>
     );
   }
 }
