@@ -133,6 +133,7 @@ class App extends Component {
       gameStatus: "play", // gameStatus = ["play", "win", "lose"]; used for changing button elements and ending the game
       timerStatus: null,
       square: true,
+      difficulty: "beginner",
     };
   }
 
@@ -318,26 +319,37 @@ class App extends Component {
       timerStatus: "stopped",
     })
   }
-  // add minechange if too small
+
   changeSize(event, dim) {
+    // changes size of grid, either by changing width, height or both, depending on input "dim"
     var size = event.target.value;
-    if (size < 5) { return; }
-    if (dim === "width") {
+    if (size < 5) { return; } // minimum grid size
+    var maxMines;
+    if (dim === "width") {  // change width only
+      maxMines = Math.min(this.state.maxMines, size * this.state.height - 2); // have max mines of cell count - 2
       this.setState({
         width: size,
+        maxMines,
+        difficulty: "custom",
+      }, function() {
+        this.resetGame(); // refresh grid
+      })
+    } else if (dim === "height") {  // change height only
+      maxMines = Math.min(this.state.maxMines, size * this.state.width - 2);
+      this.setState({
+        height: size,
+        maxMines,
+        difficulty: "custom",
       }, function() {
         this.resetGame();
       })
-    } else if (dim === "height") {
-      this.setState({
-        height: size,
-      }, function() {
-        this.resetGame();
-      })
-    } else {
+    } else {  // change both dimensions together (square shape)
+      maxMines = Math.min(this.state.maxMines, size * size - 2);
       this.setState({
         width: size,
         height: size,
+        maxMines,
+        difficulty: "custom",
       }, function() {
         this.resetGame();
       })
@@ -345,14 +357,51 @@ class App extends Component {
   }
 
   changeMaxMines(event) {
+    // changes number of mines on grid
     var maxMines = event.target.value;
-    if (maxMines > this.state.width * this.state.height - 2) {
+    if (maxMines > this.state.width * this.state.height - 2) {  // max mines of cell count - 2
       maxMines = this.state.width * this.state.height - 2;
     } 
     this.setState({
       maxMines,
+      difficulty: "custom",
     }, function () {
       this.resetGame(); // reset game to blank state with new size
+    })
+  }
+
+  changeDifficulty(event) {
+    // preset difficulties for radio buttons. changing a setting manually changes radio button to "custom"
+    var difficulty = event.target.value;
+    var width, height, maxMines;
+    switch(difficulty) {
+      case "beginner":
+        width = 9;
+        height = 9;
+        maxMines = 10;
+        break;
+      case "intermediate":
+        width = 16;
+        height = 16;
+        maxMines = 40;
+        break;
+      case "advanced":
+        width = 30;
+        height = 16;
+        maxMines = 99;
+        break;
+      default:
+        width = this.state.width;
+        height = this.state.height;
+        maxMines = this.state.maxMines;
+    }
+    this.setState({
+      difficulty,
+      width,
+      height,
+      maxMines,
+    }, function() {
+      this.resetGame();
     })
   }
 
@@ -504,6 +553,35 @@ class App extends Component {
                         onChange={this.changeMaxMines.bind(this)} 
                       />
                     </label>
+                  </form>
+                </div>
+
+                <div className="option">
+                  <form>
+                    <div className="radio">
+                      <label>
+                        Beginner
+                        <input type="radio" value="beginner" checked={this.state.difficulty === "beginner"} onChange={this.changeDifficulty.bind(this)} />
+                      </label>
+                    </div>
+                    <div className="radio">
+                      <label>
+                        Intermediate
+                        <input type="radio" value="intermediate" checked={this.state.difficulty === "intermediate"} onChange={this.changeDifficulty.bind(this)} />
+                      </label>
+                    </div>
+                    <div className="radio">
+                      <label>
+                        Advanced
+                        <input type="radio" value="advanced" checked={this.state.difficulty === "advanced"} onChange={this.changeDifficulty.bind(this)} />
+                      </label>
+                    </div>
+                    <div className="radio">
+                      <label>
+                        Custom
+                        <input type="radio" value="custom" checked={this.state.difficulty === "custom"} onChange={this.changeDifficulty.bind(this)} />
+                      </label>
+                    </div>
                   </form>
                 </div>
 
